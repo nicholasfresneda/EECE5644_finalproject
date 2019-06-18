@@ -3,23 +3,29 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 import math
+from sklearn.metrics import mean_squared_error
+import matplotlib.pyplot as plt
 from sklearn.metrics import classification_report, confusion_matrix
 
 
 # find score of a classifier
 # compares predicted traffic volume to real traffic volume, if within 5% of real, it is deemed correct
-def get_score(sv_classifier, xtest, ytest, error):
-    y_pred = sv_classifier.predict(xtest)
+# arguments:
+#   pred = predictions
+#   ytest = real values
+#   error = percent allowable error
+def get_score(pred, ytest, error):
     count = 0
     for i in range(0, len(y_pred)):
         delta = ytest.iloc[i] * error
-        if ytest.iloc[i] - delta < y_pred[i] < ytest.iloc[i] + delta:
+        if ytest.iloc[i] - delta < pred[i] < ytest.iloc[i] + delta:
             count = count + 1
 
     return count / len(y_pred)
 
 
-input_data = pd.read_csv("CleanedData_new.csv")
+traffic_column = 8
+input_data = pd.read_csv("CleanedData.csv")
 # Preview the first 5 lines of the loaded data
 datasize = 2500
 
@@ -53,7 +59,8 @@ for k in range(0, K):
                 k_svclassifier = SVC(kernel='linear', C=Clist[c], gamma='auto')
 
             k_svclassifier.fit(x_k_train, y_k_train)
-            score = get_score(k_svclassifier, x_k_test, y_k_test, error_range)
+            y_pred = k_svclassifier.predict(x_k_test)
+            score = get_score(y_pred, y_k_test, error_range)
             if score > max:
                 max = score
                 bestfun = fun
@@ -71,6 +78,16 @@ else:
     svclassifier = SVC(kernel='linear', C=k_rankings[best_k, 2], gamma='auto')
 
 svclassifier.fit(X_train, y_train)
-print("score " + str(get_score(svclassifier, X_test, y_test, error_range)))
+y_pred = svclassifier.predict(X_test)
+print("Predictions correct within 10% margin" + str(get_score(y_pred, y_test, error_range)))
 print("best function " + str(k_rankings[best_k, 1]))
 print("best C " + str(k_rankings[best_k, 2]))
+print("mean squared error " + str(mean_squared_error(y_test, y_pred)))
+# export to new csv
+new_df = X_test
+new_df.insert(traffic_column, "traffic_volume", y_test)
+new_df.insert(len(new_df.columns), "predictions", y_pred)
+new_df.to_csv("results.csv")
+
+# plot data
+plt.plot(y_test, y_pred, 'o')   
