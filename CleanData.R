@@ -17,17 +17,18 @@ baseData$date_time <- as.POSIXct(baseData$date_time, format = "%m/%d/%Y %H:%M:%S
 baseData$hour <- hour(baseData$date_time)
 baseData$month <- month(baseData$date_time)
 baseData$weekend <- as.character(wday(baseData$date_time))
+baseData$traffic_volume <- as.numeric(baseData$traffic_volume)
 roundedData <- baseData
-roundedData$weekend <- round_any(roundedData$weekend, 500)
+roundedData$traffic_volume <- round_any(roundedData$traffic_volume, 500)
 ggplot(roundedData[1:10000,], aes(x = traffic_volume, color = weekend, fill = weekend)) + 
   geom_bar() +
   theme(legend.position="top")
 baseData$weekend[baseData$weekend<6] <- 0 # Designates weekday
 baseData$weekend[baseData$weekend>5] <- 1 # Designates weekend
 roundedData <- baseData
-roundedData$weekend <- round_any(roundedData$weekend, 500)
+roundedData$traffic_volume <- round_any(roundedData$traffic_volume, 500)
 ggplot(roundedData[1:10000,], aes(x = traffic_volume, color = weekend, fill = weekend)) + 
-  geom_bar() +
+  geom_bar(position = "dodge") +
   theme(legend.position="top")
 
 baseData$date <- date(baseData$date_time)
@@ -43,13 +44,13 @@ for (i in 1:length(hDates)) {
   baseData$holiday[baseData$date == hDates[i]] <- temp[1]
 }
 holidayData <- filter(baseData, holiday != "None")
-#ggplot(holidayData, aes(x = traffic_volume, y = holiday)) + geom_point()
+ggplot(holidayData, aes(x = traffic_volume, y = holiday)) + geom_point()
 baseData$holiday[baseData$holiday == "None"] <- "0"
 baseData$holiday[baseData$holiday == "Washingtons Birthday" | baseData$holiday == "Veterans Day" |
                    baseData$holiday == "State Fair" | baseData$holiday == "Columbus Day"] <- "0"
 baseData$holiday[baseData$holiday != "0" & baseData$holiday != "1"] <- "1"
 holidayData <- filter(baseData, holiday != "None")
-#ggplot(holidayData, aes(x = traffic_volume, y = holiday)) + geom_point()
+ggplot(holidayData, aes(x = traffic_volume, y = holiday)) + geom_point()
 rm(holidayData, hDates, i, temp)
 
 # Remove variation in capitalization and convert to numeric if necessary
