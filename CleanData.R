@@ -1,6 +1,7 @@
 library (ggplot2)
 library(dplyr)
 library(lubridate)
+library(plyr)
 options(digits=3)
 
 # Import data
@@ -15,9 +16,20 @@ baseData$date_time <- paste(baseData$date_time, ":00", sep = "")
 baseData$date_time <- as.POSIXct(baseData$date_time, format = "%m/%d/%Y %H:%M:%S")
 baseData$hour <- hour(baseData$date_time)
 baseData$month <- month(baseData$date_time)
-baseData$weekend <- wday(baseData$date_time)
-baseData$weekend[baseData$weekday<6] <- 0 # Designates weekday
-baseData$weekend[baseData$weekday>5] <- 1 # Designates weekend
+baseData$weekend <- as.character(wday(baseData$date_time))
+roundedData <- baseData
+roundedData$weekend <- round_any(roundedData$weekend, 500)
+ggplot(roundedData[1:10000,], aes(x = traffic_volume, color = weekend, fill = weekend)) + 
+  geom_bar() +
+  theme(legend.position="top")
+baseData$weekend[baseData$weekend<6] <- 0 # Designates weekday
+baseData$weekend[baseData$weekend>5] <- 1 # Designates weekend
+roundedData <- baseData
+roundedData$weekend <- round_any(roundedData$weekend, 500)
+ggplot(roundedData[1:10000,], aes(x = traffic_volume, color = weekend, fill = weekend)) + 
+  geom_bar() +
+  theme(legend.position="top")
+
 baseData$date <- date(baseData$date_time)
 baseData$year <- year(baseData$date_time) # Not used in calculations, just in segmenting data
 
@@ -31,7 +43,7 @@ for (i in 1:length(hDates)) {
   baseData$holiday[baseData$date == hDates[i]] <- temp[1]
 }
 holidayData <- filter(baseData, holiday != "None")
-ggplot(holidayData, aes(x = traffic_volume, y = holiday)) + geom_point()
+#ggplot(holidayData, aes(x = traffic_volume, y = holiday)) + geom_point()
 baseData$holiday[baseData$holiday == "None"] <- "0"
 baseData$holiday[baseData$holiday == "Washingtons Birthday" | baseData$holiday == "Veterans Day" |
                    baseData$holiday == "State Fair" | baseData$holiday == "Columbus Day"] <- "0"
